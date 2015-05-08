@@ -1,0 +1,242 @@
+//--------------------------------------
+//--- 010 Editor Binary Template
+//
+// File:     
+// Author:   nforest@k33nteam.org
+// Purpose:  Parse x86/x64 Windows Kernel Dump, dmp
+
+// Reference:
+// http://computer.forensikblog.de/files/010_templates/DMP.bt
+// http://computer.forensikblog.de/en/2006/03/dmp-file-structure.html
+// http://computer.forensikblog.de/en/2008/02/64bit-crash-dumps.html
+//--------------------------------------
+
+typedef enum <uint32> {
+	FULL = 1,
+	KERNEL,
+	SMALL,
+	TRIAGE
+} e_DumpType;
+
+
+// ===================================================================
+
+
+typedef struct {
+	uint32				BasePage <format=hex>;
+	uint32				PageCount <format=hex>;
+} _PHYSICAL_MEMORY_RUN32;
+
+
+typedef struct {
+	uint32				NumberOfRuns;
+	uint32				NumberOfPages <format=hex>;
+    if (NumberOfRuns != 0x45474150)
+    {
+        _PHYSICAL_MEMORY_RUN32		Run[NumberOfRuns];
+    } 
+} _PHYSICAL_MEMORY_DESCRIPTOR32;
+
+
+typedef struct {
+	int32				ExceptionCode <format=hex>;
+	uint32				ExceptionFlags  <format=hex>;
+	uint32				ExceptionRecord;
+	uint32				ExceptionAddress <format=hex>;
+	uint32				NumberParameters;
+	uint32				ExceptionInformation[15] <format=hex>;
+} _EXCEPTION_RECORD32;
+
+
+typedef struct {
+	char				Signature[4];
+	char				ValidDump[4];
+	uint32				MajorVersion;
+	uint32				MinorVersion;
+	uint32				DirectoryTableBase <format=hex>;
+	uint32				PfnDataBase <format=hex>;
+	uint32				PsLoadedModuleList <format=hex>;
+	uint32				PsActiveProcessHead <format=hex>;
+	uint32				MachineImageType <format=hex>;
+	uint32				NumberProcessors;
+	uint32				BugCheckCode <format=hex>;
+	uint32				BugCheckParameter[4] <format=hex>;
+	char 				VersionUser[32];
+	uchar				PaeEnabled;
+	uchar				KdSecondaryVersion;
+	uchar				Spare3[2];
+	uint32				KdDebuggerDataBlock <format=hex>;
+	_PHYSICAL_MEMORY_DESCRIPTOR32	PhysicalMemoryBlock;
+	FSeek(800);
+	uchar				ContextRecord[1200];
+	_EXCEPTION_RECORD32		Exception;
+	char				Comment[128];
+	uchar				_reserved0[1768];
+	e_DumpType			DumpType;
+	uint32				MiniDumpFields;
+	uint32				SecondaryDataState;
+	uint32				ProductType;
+	uint32				SuiteMask;
+	uint32				WriterStatus;
+	int64				RequiredDumpSpace;
+	uchar				_reserved2[16];
+	FILETIME			SystemUpTime;	// not really a FILETIME!
+	FILETIME			SystemTime;
+	uchar				_reserved3[56];
+	// size is 0x1000 bytes
+} DUMP_HEADER32;
+
+typedef struct {
+    uint32 ServicePackBuild;
+    uint32 SizeOfDump;
+    uint32 ValidOffset <format=hex>;
+    uint32 ContextOffset <format=hex>;
+    uint32 ExceptionOffset <format=hex>;
+    uint32 MmOffset <format=hex>;
+    uint32 UnloadedDriversOffset <format=hex>;
+    uint32 PrcbOffset <format=hex>;
+    uint32 ProcessOffset <format=hex>;
+    uint32 ThreadOffset <format=hex>;
+    uint32 CallStackOffset <format=hex>;
+    uint32 SizeOfCallStack;
+    uint32 DriverListOffset <format=hex>;
+    uint32 DriverCount;
+    uint32 StringPoolOffset <format=hex>;
+    uint32 StringPoolSize <format=hex>;
+    uint32 BrokenDriverOffset <format=hex>;
+    uint32 TriageOptions;
+    uint32 TopOfStack <format=hex>;
+    FSkip(12);
+    uint32 DebuggerDataOffset <format=hex>;
+    uint32 DebuggerDataSize;
+    uint32 DataBlocksOffset <format=hex>;
+    uint32 DataBlocksCountuint32;
+} TRIAGE_DUMP_HEADER32;
+
+// ===================================================================
+
+
+typedef struct {
+	uint64				BasePage <format=hex>;
+	uint64				PageCount <format=hex>;
+} _PHYSICAL_MEMORY_RUN64;
+
+
+typedef struct {
+	uint64				NumberOfRuns;
+	uint64				NumberOfPages <format=hex>;
+    if (NumberOfRuns != 0x4547415045474150)
+    {
+        _PHYSICAL_MEMORY_RUN64		Run[NumberOfRuns];
+    }
+} _PHYSICAL_MEMORY_DESCRIPTOR64;
+
+
+typedef struct {
+	int32				ExceptionCode <format=hex>;
+	uint32				ExceptionFlags <format=hex>;
+	uint64				ExceptionRecord;	
+	uint64				ExceptionAddress <format=hex>;
+	uint32				NumberParameters;
+	FSkip(4);
+	uint64				ExceptionInformation[15] <format=hex>;
+} _EXCEPTION_RECORD64;
+
+
+typedef struct {
+	char				Signature[4];
+	char				ValidDump[4];
+	uint32				MajorVersion;
+	uint32				MinorVersion;
+	uint64				DirectoryTableBase <format=hex>;
+	uint64				PfnDataBase <format=hex>;
+	uint64				PsLoadedModuleList <format=hex>;
+	uint64				PsActiveProcessHead <format=hex>;
+	uint32				MachineImageType <format=hex>;
+	uint32				NumberProcessors;
+	uint32				BugCheckCode <format=hex>;
+	FSkip(4);
+	uint64				BugCheckParameter[4] <format=hex>;
+//	FSeek ( 0x60 );
+//	uchar				PaeEnabled;		// does that make any sense?
+	FSeek( 0x80 );
+	uint64				KdDebuggerDataBlock <format=hex>;
+	_PHYSICAL_MEMORY_DESCRIPTOR64	PhysicalMemoryBlock;
+	FSeek( 0xf00 );
+	_EXCEPTION_RECORD64		Exception;
+	FSeek( 0xf98 );
+	e_DumpType			DumpType;			
+	FSeek( 0xfa0 );
+	FILETIME			SystemUpTime;	// not really a FILETIME!
+	FILETIME			SystemTime;	
+	/* more to come, size is 0x2000 bytes */
+} DUMP_HEADER64;
+
+typedef struct {
+    uint32 ServicePackBuild;
+    uint32 SizeOfDump;
+    uint32 ValidOffset <format=hex>;
+    uint32 ContextOffset <format=hex>;
+    uint32 ExceptionOffset <format=hex>;
+    uint32 MmOffset <format=hex>;
+    uint32 UnloadedDriversOffset <format=hex>;
+    uint32 PrcbOffset <format=hex>;
+    uint32 ProcessOffset <format=hex>;
+    uint32 ThreadOffset <format=hex>;
+    uint32 CallStackOffset <format=hex>;
+    uint32 SizeOfCallStack;
+    uint32 DriverListOffset <format=hex>;
+    uint32 DriverCount;
+    uint32 StringPoolOffset <format=hex>;
+    uint32 StringPoolSize;
+    uint32 BrokenDriverOffset <format=hex>;
+    uint32 TriageOptions;
+    uint64 TopOfStack <format=hex>;
+    FSkip(32);
+    uint32 DebuggerDataOffset <format=hex>;
+    uint32 DebuggerDataSize;
+    uint32 DataBlocksOffset <format=hex>;
+    uint32 DataBlocksCountuint32;
+} TRIAGE_DUMP_HEADER64;
+
+// ===================================================================
+
+// ===================================================================
+// Code
+
+local char magic[8];
+ReadBytes(magic, 0, 8);
+if (Strncmp(magic, "PAGEDUMP", 8) == 0) {
+	FSeek(0);
+	DUMP_HEADER32			Hdr32;
+	FSeek(0x1000);
+	TRIAGE_DUMP_HEADER32	TriageHdr32;
+
+	FSeek(TriageHdr32.ContextOffset);
+	// CONTEXT32	Context32;
+	FSeek(TriageHdr32.ExceptionOffset);
+	// EXCEPTION_RECORD32	Exception32;	
+	FSeek(TriageHdr32.CallStackOffset);
+	// 
+	FSeek(TriageHdr32.UnloadedDriversOffset);
+	// 
+	FSeek(TriageHdr32.DriverListOffset);
+	// 
+
+} else if (Strncmp(magic, "PAGEDU64", 8) == 0) {
+	FSeek(0);
+	DUMP_HEADER64			Hdr64;
+	FSeek(0x2000);
+	TRIAGE_DUMP_HEADER64	TriageHdr64;
+
+	FSeek(TriageHdr64.ContextOffset);
+	// CONTEXT64	Context64;
+	FSeek(TriageHdr64.ExceptionOffset);
+	// EXCEPTION_RECORD64	Exception64;	
+	FSeek(TriageHdr64.CallStackOffset);
+	// 
+	FSeek(TriageHdr64.UnloadedDriversOffset);
+	// 
+	FSeek(TriageHdr64.DriverListOffset);
+	// 
+};
