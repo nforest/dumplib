@@ -37,6 +37,33 @@ typedef struct {
     } 
 } _PHYSICAL_MEMORY_DESCRIPTOR32;
 
+typedef struct {
+	uint32				ContextFlags <format=hex>;
+	uint32				Dr0 <format=hex>;
+	uint32				Dr1 <format=hex>;
+	uint32				Dr2 <format=hex>;
+	uint32				Dr3 <format=hex>;
+	uint32				Dr6 <format=hex>;
+	uint32				Dr7 <format=hex>;
+	uchar				_reserved0[112];
+	uint32				SegGs <format=hex>;
+	uint32				SegFs <format=hex>;
+	uint32				SegEs <format=hex>;
+	uint32				SegDs <format=hex>;
+	uint32				Edi <format=hex>;
+	uint32				Esi <format=hex>;
+	uint32				Ebx <format=hex>;
+	uint32				Edx <format=hex>;
+	uint32				Ecx <format=hex>;
+	uint32				Eax <format=hex>;
+	uint32				Ebp <format=hex>;
+	uint32				Eip <format=hex>;
+	uint32				SegCs <format=hex>;
+	uint32				EFlags <format=hex>;
+	uint32				Esp <format=hex>;
+	uint32				SegSs <format=hex>;
+	uint32				ExtendedRegisters <format=hex>;
+} _CONTEXT32;
 
 typedef struct {
 	int32				ExceptionCode <format=hex>;
@@ -68,7 +95,8 @@ typedef struct {
 	uint32				KdDebuggerDataBlock <format=hex>;
 	_PHYSICAL_MEMORY_DESCRIPTOR32	PhysicalMemoryBlock;
 	FSeek(800);
-	uchar				ContextRecord[1200];
+	_CONTEXT32				Context32;
+	FSeek(2000);
 	_EXCEPTION_RECORD32		Exception;
 	char				Comment[128];
 	uchar				_reserved0[1768];
@@ -131,6 +159,60 @@ typedef struct {
     }
 } _PHYSICAL_MEMORY_DESCRIPTOR64;
 
+typedef struct {
+    uint64             P1Home <format=hex>;
+    uint64             P2Home <format=hex>;
+    uint64             P3Home <format=hex>;
+    uint64             P4Home <format=hex>;
+    uint64             P5Home <format=hex>;
+    uint64             P6Home <format=hex>;
+    
+    uint32             ContextFlags <format=hex>;
+    uint32             MxCsr <format=hex>;
+
+    short              SegCs <format=hex>;
+    short              SegDs <format=hex>;
+    short              SegEs <format=hex>;
+    short              SegFs <format=hex>;
+    short              SegGs <format=hex>;
+    short              SegSs <format=hex>;
+    uint32             EFlags <format=hex>;
+
+    uint64             Dr0 <format=hex>;
+    uint64             Dr1 <format=hex>;
+    uint64             Dr2 <format=hex>;
+    uint64             Dr3 <format=hex>;
+    uint64             Dr6 <format=hex>;
+    uint64             Dr7 <format=hex>;
+
+    uint64             Rax <format=hex>;
+    uint64             Rcx <format=hex>;
+    uint64             Rdx <format=hex>;
+    uint64             Rbx <format=hex>;
+    uint64             Rsp <format=hex>;
+    uint64             Rbp <format=hex>;
+    uint64             Rsi <format=hex>;
+    uint64             Rdi <format=hex>;
+    uint64             R8 <format=hex>;
+    uint64             R9 <format=hex>;
+    uint64             R10 <format=hex>;
+    uint64             R11 <format=hex>;
+    uint64             R12 <format=hex>;
+    uint64             R13 <format=hex>;
+    uint64             R14 <format=hex>;
+    uint64             R15 <format=hex>;
+
+    uint64             Rip <format=hex>;
+
+    FSkip(928);
+    uint64             VectorControl <format=hex>;
+
+    uint64             DebugControl <format=hex>;
+    uint64             LastBranchToRQp <format=hex>;
+    uint64             LastBranchFromRQp <format=hex>;
+    uint64             LastExceptQonToRQp <format=hex>;
+    uint64             LastExceptQonFromRQp <format=hex>;
+} _CONTEXT64;
 
 typedef struct {
 	int32				ExceptionCode <format=hex>;
@@ -162,7 +244,11 @@ typedef struct {
 	FSeek( 0x80 );
 	uint64				KdDebuggerDataBlock <format=hex>;
 	_PHYSICAL_MEMORY_DESCRIPTOR64	PhysicalMemoryBlock;
-	FSeek( 0xf00 );
+
+    FSkip(688);
+    _CONTEXT64			Context64;
+    FSkip(1768);
+
 	_EXCEPTION_RECORD64		Exception;
 	FSeek( 0xf98 );
 	e_DumpType			DumpType;			
@@ -201,6 +287,76 @@ typedef struct {
 
 // ===================================================================
 
+typedef struct {
+    short               Length;
+    short               MaxLength;
+    uint32              Reserved;
+    wchar_t             DriverName[12];
+    uint32              StartAddress <format=hex>;
+    uint32              EndAddress <format=hex>;
+
+} UNLOADED_DRIVER_ENTRY32;
+
+typedef struct {
+    short               Length;
+    short               MaxLength;
+    uint32              __unusedAlignment;
+    uint64              Reserved;
+    wchar_t             DriverName[12];
+    uint64              StartAddress <format=hex>;
+    uint64              EndAddress <format=hex>;
+} UNLOADED_DRIVER_ENTRY64;
+
+typedef struct {
+    uint32              NumberOfEntries;
+    UNLOADED_DRIVER_ENTRY32     Entries[NumberOfEntries];
+} UNLOADED_DRIVERS32;
+
+
+typedef struct {
+    uint32              NumberOfEntries;
+    uint32          	__unusedAlignment;
+    UNLOADED_DRIVER_ENTRY64     Entries[NumberOfEntries];
+} UNLOADED_DRIVERS64;
+
+typedef struct {
+    uint32              NameOffset <format=hex>;
+    uchar               Reserved0[24];
+    uint32              DllBase <format=hex>;
+    uint32              EntryPoint <format=hex>;
+    uint32              SizeOfImage <format=hex>;
+    uchar               Reserved1[32];
+    uint32              TimeDateStamp <format=hex>;
+} DRIVER_ENTRY32;
+
+
+typedef struct {
+    uint32              NameOffset <format=hex>;
+    uchar               Reserved0[52];
+    uint64              DllBase <format=hex>;
+    uint64              EntryPoint <format=hex>;
+    uint64              SizeOfImage <format=hex>;
+    uchar               Reserved1[56];
+    uint64              TimeDateStamp <format=hex>;
+} DRIVER_ENTRY64;
+
+// ===================================================================
+
+typedef struct {
+    uint32              Length;
+    wchar_t             Name[Length];
+} NAME_STRING;
+
+typedef struct _STRING_POOL(int DriverCount)
+{
+	local ULONG ulIndex=0;
+	for (ulIndex=0; ulIndex < DriverCount; ulIndex++)
+	{
+		FSeek(DriverList[ulIndex].NameOffset);
+		NAME_STRING 	Name;
+	}
+} STRING_POOL;
+
 // ===================================================================
 // Code
 
@@ -212,16 +368,16 @@ if (Strncmp(magic, "PAGEDUMP", 8) == 0) {
 	FSeek(0x1000);
 	TRIAGE_DUMP_HEADER32	TriageHdr32;
 
-	FSeek(TriageHdr32.ContextOffset);
-	// CONTEXT32	Context32;
-	FSeek(TriageHdr32.ExceptionOffset);
-	// EXCEPTION_RECORD32	Exception32;	
 	FSeek(TriageHdr32.CallStackOffset);
-	// 
+	uint32	CallStack[TriageHdr32.SizeOfCallStack/4] <format=hex>;
+
 	FSeek(TriageHdr32.UnloadedDriversOffset);
-	// 
+	UNLOADED_DRIVERS32		UnloadedDrivers;
+	
 	FSeek(TriageHdr32.DriverListOffset);
-	// 
+	DRIVER_ENTRY32			DriverList[TriageHdr32.DriverCount];
+
+	STRING_POOL StringPool(TriageHdr32.DriverCount);
 
 } else if (Strncmp(magic, "PAGEDU64", 8) == 0) {
 	FSeek(0);
@@ -229,14 +385,15 @@ if (Strncmp(magic, "PAGEDUMP", 8) == 0) {
 	FSeek(0x2000);
 	TRIAGE_DUMP_HEADER64	TriageHdr64;
 
-	FSeek(TriageHdr64.ContextOffset);
-	// CONTEXT64	Context64;
-	FSeek(TriageHdr64.ExceptionOffset);
-	// EXCEPTION_RECORD64	Exception64;	
 	FSeek(TriageHdr64.CallStackOffset);
-	// 
+	uint64	CallStack[TriageHdr64.SizeOfCallStack/8] <format=hex>;
+	
 	FSeek(TriageHdr64.UnloadedDriversOffset);
-	// 
+	UNLOADED_DRIVERS64		UnloadedDrivers;
+
 	FSeek(TriageHdr64.DriverListOffset);
-	// 
+	DRIVER_ENTRY64			DriverList[TriageHdr64.DriverCount];
+
+	STRING_POOL StringPool(TriageHdr64.DriverCount);
+
 };
