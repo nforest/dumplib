@@ -94,9 +94,9 @@ typedef struct {
 	uchar				Spare3[2];
 	uint32				KdDebuggerDataBlock <format=hex>;
 	_PHYSICAL_MEMORY_DESCRIPTOR32	PhysicalMemoryBlock;
-	FSeek(800);
-	_CONTEXT32				Context32;
+
 	FSeek(2000);
+	// just for test
 	_EXCEPTION_RECORD32		Exception;
 	char				Comment[128];
 	uchar				_reserved0[1768];
@@ -245,11 +245,6 @@ typedef struct {
 	uint64				KdDebuggerDataBlock <format=hex>;
 	_PHYSICAL_MEMORY_DESCRIPTOR64	PhysicalMemoryBlock;
 
-    FSkip(688);
-    _CONTEXT64			Context64;
-    FSkip(1768);
-
-	_EXCEPTION_RECORD64		Exception;
 	FSeek( 0xf98 );
 	e_DumpType			DumpType;			
 	FSeek( 0xfa0 );
@@ -368,6 +363,12 @@ if (Strncmp(magic, "PAGEDUMP", 8) == 0) {
 	FSeek(0x1000);
 	TRIAGE_DUMP_HEADER32	TriageHdr32;
 
+	FSeek(TriageHdr32.ContextOffset);
+	_CONTEXT32			Context;
+
+	FSeek(TriageHdr32.ExceptionOffset);
+	_EXCEPTION_RECORD32		Exception;
+
 	FSeek(TriageHdr32.CallStackOffset);
 	uint32	CallStack[TriageHdr32.SizeOfCallStack/4] <format=hex>;
 
@@ -384,6 +385,12 @@ if (Strncmp(magic, "PAGEDUMP", 8) == 0) {
 	DUMP_HEADER64			Hdr64;
 	FSeek(0x2000);
 	TRIAGE_DUMP_HEADER64	TriageHdr64;
+
+	FSeek(TriageHdr64.ContextOffset);
+	_CONTEXT64			Context;
+
+	FSeek(TriageHdr64.ExceptionOffset);
+	_EXCEPTION_RECORD64		Exception;
 
 	FSeek(TriageHdr64.CallStackOffset);
 	uint64	CallStack[TriageHdr64.SizeOfCallStack/8] <format=hex>;
